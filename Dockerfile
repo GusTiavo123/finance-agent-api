@@ -15,7 +15,7 @@ RUN uv sync --frozen --no-dev
 
 FROM python:3.12-slim
 
-RUN groupadd --system appgroup && useradd --system --gid appgroup appuser
+RUN groupadd --system appgroup && useradd --system --gid appgroup --create-home appuser
 
 WORKDIR /app
 COPY --from=builder /app/.venv ./.venv
