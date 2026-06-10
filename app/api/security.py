@@ -34,11 +34,13 @@ async def get_client_id(api_key: str = Depends(require_api_key)) -> str:
 
 
 async def enforce_rate_limit(
+    request: Request,
     response: Response,
     client_id: str = Depends(get_client_id),
     container: Container = Depends(get_container),
 ) -> None:
     decision = await container.rate_limiter.acquire(client_id)
+    request.state.rate_limit = decision
     response.headers["X-RateLimit-Limit"] = str(decision.limit)
     response.headers["X-RateLimit-Remaining"] = str(decision.remaining)
     if not decision.allowed:

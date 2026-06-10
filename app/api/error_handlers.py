@@ -22,16 +22,24 @@ STATUS_BY_ERROR: dict[type[DomainError], int] = {
 }
 
 
+def _rate_limit_headers(request: Request) -> dict[str, str]:
+    decision = getattr(request.state, "rate_limit", None)
+    if decision is None:
+        return {}
+    return {
+        "X-RateLimit-Limit": str(decision.limit),
+        "X-RateLimit-Remaining": str(decision.remaining),
+    }
+
+
 def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(DomainError)
     async def domain_error_handler(request: Request, exc: DomainError) -> JSONResponse:
         status = STATUS_BY_ERROR.get(type(exc), 400)
-        headers = {}
+        headers = _rate_limit_headers(request)
         message = exc.message
         if isinstance(exc, RateLimitExceededError):
             headers["Retry-After"] = str(exc.retry_after_seconds)
-            headers["X-RateLimit-Limit"] = str(exc.limit)
-            headers["X-RateLimit-Remaining"] = str(exc.remaining)
         if status >= 500:
             logger.error("request_id=%s %s", request.state.request_id, exc.message)
             message = "The agent could not process the request, please try again later"
@@ -65,6 +73,7 @@ def register_error_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=422,
             content={"error": {"code": "validation_error", "message": message}},
+            headers=_rate_limit_headers(request),
         )
 
     @app.exception_handler(Exception)
@@ -79,4 +88,5 @@ def register_error_handlers(app: FastAPI) -> None:
                     "message": "Unexpected error, please try again later",
                 }
             },
+            headers=_rate_limit_headers(request),
         )

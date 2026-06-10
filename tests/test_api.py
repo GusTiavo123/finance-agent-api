@@ -81,6 +81,8 @@ def test_history_returns_404_for_unknown_conversation():
         response = client.get("/chat/desconocida", headers=HEADERS)
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "conversation_not_found"
+    assert response.headers["X-RateLimit-Limit"] == "100"
+    assert response.headers["X-RateLimit-Remaining"] == "99"
 
 
 def test_guardrail_violation_returns_422():

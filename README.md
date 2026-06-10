@@ -186,8 +186,8 @@ de negocio.
 
 **Rate limiting por API key.** Ventana fija respaldada en Redis (`INCR` + `EXPIRE` atómicos), por
 lo que funciona igual con N réplicas de la API. Las claves de Redis usan el digest de la API key
-(nunca la key en texto plano). Responde `429` con `Retry-After`, y todas las respuestas —
-incluido el `429` — llevan `X-RateLimit-Limit` / `X-RateLimit-Remaining`.
+(nunca la key en texto plano). Responde `429` con `Retry-After`, y toda respuesta autenticada —
+éxitos y errores por igual — lleva `X-RateLimit-Limit` / `X-RateLimit-Remaining`.
 
 **Gobernanza del modelo.** Cada interacción emite una traza estructurada (JSON por línea, logger
 `agent.governance`) detrás de `TelemetryPort`:
